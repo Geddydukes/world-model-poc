@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+ "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key> <string>com.worldmodel.sleep</string>
+
+  <!-- Run the shell script -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>$HOME/world-model-poc/run_nightly.sh</string>
+  </array>
+
+  <!-- Run every day at 02:00 -->
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>2</integer>
+    <key>Minute</key><integer>0</integer>
+  </dict>
+
+  <!-- Keep logs tidy -->
+  <key>StandardOutPath</key> <string>$HOME/world-model-poc/logs/launchd.out.log</string>
+  <key>StandardErrorPath</key> <string>$HOME/world-model-poc/logs/launchd.err.log</string>
+
+  <!-- Ensure it runs even if you log out -->
+  <key>RunAtLoad</key> <true/>
+</dict>
+</plist>

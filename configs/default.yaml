@@ -1,0 +1,50 @@
+experiment: nightly_world_model_v0
+device: mps
+precision: bf16
+
+data:
+  today_date: "2025-09-09"
+  image_size: 224
+  frame_glob_today: "data/frames/{date}/**/*.jpg"
+  frame_glob_replay: ""
+  audio_glob_today: "data/audio/{date}/segments/*.wav"
+  audio_glob_replay: ""
+  mix_ratio_today: 0.6
+  num_workers: 2
+
+vision:
+  embed_dim: 256
+  depth: 6
+  heads: 4
+  pred_dim: 512
+  mask_ratio: 0.6
+
+audio:
+  mel_bins: 64
+  sample_rate: 16000
+  hop_length: 320
+  win_length: 640
+  cpc_hidden: 256
+  cpc_context: 256
+  cpc_pred_steps: 3
+
+train:
+  batch_size: 16
+  micro_batch: 2
+  grad_accum: 8
+  steps_vision: 5000
+  steps_audio: 4000
+  steps_align: 2000
+  lr: 1.0e-4
+  weight_decay: 0.05
+  ema_momentum: 0.999
+  log_every: 1000
+
+memory:
+  sqlite_path: "memory/episodic.sqlite"
+  embed_dir: "memory/embeddings"
+  kmeans_clusters: 64
+
+outputs:
+  ckpt_dir: "checkpoints/daily"
+  report_dir: "reports"
