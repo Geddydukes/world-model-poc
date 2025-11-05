@@ -106,8 +106,7 @@ class EpisodicMemory:
         vec = np.asarray(vec, dtype=np.float32).reshape(-1)
         if vec.size == 0:
             raise ValueError("Empty embedding vector")
-        unique = abs(hash((clip_id, frame_idx_start, frame_idx_end, model_tag))) & 0xFFFFFFFF
-        fname = f"{modality}_{model_tag}_{clip_id}_{unique:08x}.npy"
+        fname = f"{modality}_{model_tag}_{clip_id}_{abs(hash((clip_id, frame_idx_start, frame_idx_end, model_tag))) & 0xffffffff:x}.npy"
         fpath = self.embed_dir / fname
         np.save(fpath, vec)
         with self._cursor() as cur:

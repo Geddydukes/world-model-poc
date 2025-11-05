@@ -32,8 +32,8 @@ class VisionSSLTrainer:
     def __init__(self, cfg: Dict[str, Any], *, device: torch.device) -> None:
         self.cfg = cfg
         self.device = device
-        self.precision = amp_dtype(device)
-        self.autocast = autocast_enabled(device)
+        self.precision = amp_dtype()
+        self.autocast = autocast_enabled(device_type_str(device))
 
     # ------------------------------------------------------------------ helpers
     def _collect_globs(self, date: str) -> List[str]:

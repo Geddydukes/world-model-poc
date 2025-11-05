@@ -225,6 +225,7 @@ def main() -> None:
             clip_id, summary = future.result()
             results[clip_id] = summary
 
+    manifest_path = sequence_dir / "manifest.json"
     with manifest_path.open("w", encoding="utf-8") as handle:
         json.dump(dict(sorted(results.items())), handle, indent=2, sort_keys=False)
     print(f"Ingested {len(results)} new clips. Manifest written to {manifest_path}")
