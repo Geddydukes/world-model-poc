@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
+import cv2
 import yaml
 from tqdm import tqdm
 
@@ -57,6 +59,8 @@ def _ingest_single_clip(
     checksum: str,
     date: str,
     sequence_root: Path,
+    frames_root: Path,
+    audio_segments_dir: Path,
     sqlite_path: Path,
     embed_dir: Path,
     target_fps: Optional[float],
@@ -78,6 +82,8 @@ def _ingest_single_clip(
         flow_path = save_flow(flow, clip_dir)
 
     wav_path = extract_audio_wav(clip_path, clip_dir / "audio.wav", sample_rate=audio_cfg["sample_rate"])
+    segment_path = audio_segments_dir / f"{clip_id}.wav"
+    shutil.copy2(wav_path, segment_path)
     log_mel, times_ms = extract_audio_log_mel(
         wav_path,
         sample_rate=audio_cfg["sample_rate"],
@@ -86,6 +92,12 @@ def _ingest_single_clip(
         win_length=audio_cfg["win_length"],
     )
     audio_features_path = save_audio_features(clip_dir, log_mel=log_mel, times_ms=times_ms)
+
+    jpeg_dir = ensure_dir(frames_root / clip_id)
+    for idx, frame in enumerate(stack.frames):
+        out = jpeg_dir / f"frame_{idx + 1:04d}.jpg"
+        bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(str(out), bgr)
 
     mem = EpisodicMemory(sqlite_path=sqlite_path, embed_dir=embed_dir)
     try:
@@ -110,6 +122,8 @@ def _ingest_single_clip(
         "metadata_path": str(metadata_path),
         "flow_path": str(flow_path) if flow_path else None,
         "audio_features_path": str(audio_features_path),
+        "audio_segment_path": str(segment_path),
+        "frames_jpeg_dir": str(jpeg_dir),
         "checksum": checksum,
     }
     return clip_id, summary
@@ -138,9 +152,14 @@ def main() -> None:
     raw_dir = Path(f"data/raw/{date}")
     clip_dir = Path(f"data/clips/{date}")
     sequence_dir = Path(f"data/sequences/{date}")
-    ensure_dir(raw_dir)
+    frames_root = Path("data/frames") / date
+    audio_segments_dir = Path("data/audio") / date / "segments"
+    if not raw_dir.exists():
+        raise SystemExit(f"Raw directory missing: {raw_dir}")
     ensure_dir(clip_dir)
     ensure_dir(sequence_dir)
+    ensure_dir(frames_root)
+    ensure_dir(audio_segments_dir)
 
     sqlite_path = Path(memory_cfg.get("sqlite_path", "memory/episodic.sqlite"))
     embed_dir = Path(memory_cfg.get("embed_dir", "memory/embeddings"))
@@ -174,7 +193,10 @@ def main() -> None:
     finally:
         mem.close()
 
+    manifest_path = sequence_dir / "manifest.json"
     if not todo:
+        with manifest_path.open("w", encoding="utf-8") as handle:
+            json.dump({}, handle, indent=2)
         print("All clips already ingested; nothing to do.")
         return
 
@@ -189,6 +211,8 @@ def main() -> None:
                     checksum=checksum,
                     date=date,
                     sequence_root=sequence_dir,
+                    frames_root=frames_root,
+                    audio_segments_dir=audio_segments_dir,
                     sqlite_path=sqlite_path,
                     embed_dir=embed_dir,
                     target_fps=target_fps,

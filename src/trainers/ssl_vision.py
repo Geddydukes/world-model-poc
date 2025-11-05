@@ -146,14 +146,22 @@ class VisionSSLTrainer:
                 with torch.no_grad():
                     teacher_tokens = teacher(images).mean(dim=1).cpu().numpy()
                 for i, path in enumerate(paths):
-                    clip_id = Path(path).stem
+                    path_obj = Path(path)
+                    clip_id = path_obj.parent.name or path_obj.stem
+                    frame_idx = 0
+                    stem = path_obj.stem
+                    if "_" in stem:
+                        try:
+                            frame_idx = int(stem.split("_")[-1]) - 1
+                        except ValueError:
+                            frame_idx = 0
                     memory.add_embedding(
                         clip_id=clip_id,
                         vec=teacher_tokens[i],
                         modality="vision",
                         model_tag=vision_cfg.get("model_tag", "vision_jepa"),
-                        frame_idx_start=0,
-                        frame_idx_end=0,
+                        frame_idx_start=frame_idx,
+                        frame_idx_end=frame_idx,
                         mean_pool=True,
                     )
                 teacher.train()
