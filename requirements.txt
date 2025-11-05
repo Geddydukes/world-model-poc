@@ -9,3 +9,5 @@ soundfile
 scikit-learn
 tqdm
 matplotlib
+librosa
+faiss-cpu; sys_platform != 'darwin'
