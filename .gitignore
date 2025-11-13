@@ -2,9 +2,47 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# Checkpoints and model files
 checkpoints/
+*.pt
+*.pth
+
+# Reports and outputs
 reports/
+*.png
+*.jpg
+*.jpeg
+
+# Data directories (exclude large files)
 data/frames/
 data/clips/
 data/audio/
+data/raw/
+data/sequences/
+data/clevrer/videos/
+data/clevrer/annotations/
+*.npy
+*.npz
+*.mp4
+*.wav
+
+# Memory and embeddings
 memory/embeddings/
+memory/episodic.sqlite
+memory/*.sqlite
+
+# Logs
+*.log
+*.txt
+!requirements.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

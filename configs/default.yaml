@@ -1,16 +1,32 @@
 experiment: nightly_world_model_v0
-device: mps
+device: auto
 precision: bf16
 
 data:
-  today_date: "2025-09-09"
+  today_date: "clevrer_train"
   image_size: 224
-  frame_glob_today: "data/frames/{date}/**/*.jpg"
+  frame_glob_today: "data/sequences/clevrer_train/*/frames.npy"
   frame_glob_replay: ""
-  audio_glob_today: "data/audio/{date}/segments/*.wav"
+  audio_glob_today: "data/audio/clevrer_train/segments/*.wav"
   audio_glob_replay: ""
   mix_ratio_today: 0.6
   num_workers: 2
+  # CLEVRER dataset paths
+  clevrer:
+    video_dir: "data/clevrer/videos"
+    annotation_dir: "data/clevrer/annotations"
+    train_dir: "data/clevrer/train"
+    val_dir: "data/clevrer/val"
+    test_dir: "data/clevrer/test"
+    use_clevrer: true
+    clevrer_frame_glob: "data/sequences/clevrer_train/*/frames.npy"
+    clevrer_audio_glob: "data/audio/clevrer_train/segments/*.wav"
+
+ingest:
+  target_fps: 8.0
+  frames_per_stack: 12
+  frame_stride: 1
+  enable_flow: false
 
 vision:
   embed_dim: 256
@@ -18,6 +34,7 @@ vision:
   heads: 4
   pred_dim: 512
   mask_ratio: 0.6
+  model_tag: vision_jepa
 
 audio:
   mel_bins: 64
@@ -27,6 +44,7 @@ audio:
   cpc_hidden: 256
   cpc_context: 256
   cpc_pred_steps: 3
+  model_tag: audio_cpc
 
 train:
   batch_size: 16
@@ -35,15 +53,29 @@ train:
   steps_vision: 5000
   steps_audio: 4000
   steps_align: 2000
+  run_ssl_vision: true
+  run_ssl_audio: true
+  run_align: true
+  run_world_predict: false
   lr: 1.0e-4
   weight_decay: 0.05
   ema_momentum: 0.999
-  log_every: 1000
+  log_every: 500
 
 memory:
   sqlite_path: "memory/episodic.sqlite"
   embed_dir: "memory/embeddings"
   kmeans_clusters: 64
+
+index:
+  use_faiss: true
+  rebuild_on_new_embeddings: true
+  output_dir: "memory/indexes"
+
+modules:
+  use_slots: true
+  use_flow: false
+  use_symbolic: false
 
 outputs:
   ckpt_dir: "checkpoints/daily"

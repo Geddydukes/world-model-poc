@@ -66,6 +66,7 @@ This project implements a personal AI assistant that continuously learns from yo
 
 ### 1. Data Ingestion
 
+#### Daily Video Processing
 Process raw video files into training data:
 
 ```bash
@@ -79,8 +80,18 @@ This will:
 - Extract audio segments at 16kHz
 - Save to organized directories
 
+#### CLEVRER Dataset Integration
+For research and benchmarking, the system includes CLEVRER dataset support:
+
+```bash
+python scripts/ingest_clevrer.py --split train --max_videos 100
+```
+
+See [CLEVRER_INTEGRATION.md](CLEVRER_INTEGRATION.md) for details.
+
 ### 2. Training
 
+#### Standard Training
 Run the nightly training pipeline:
 
 ```bash
@@ -93,7 +104,33 @@ This performs:
 - Multimodal alignment training
 - Memory storage of learned embeddings
 
-### 3. Memory Query
+#### Baseline Vision SSL Training
+For stable vision-only training on CLEVRER:
+
+```bash
+python sleep.py --config configs/baseline_vision_ssl.yaml --date clevrer_train
+```
+
+See [BASELINE_README.md](BASELINE_README.md) for training details and results.
+
+### 3. Validation
+
+Run validation on trained models:
+
+```bash
+python scripts/run_validation.py \
+  --checkpoint checkpoints/daily/clevrer_train_vision_ssl.pt \
+  --config configs/baseline_vision_ssl.yaml \
+  --num-batches 50 \
+  --rollout-steps 20 \
+  --skip-viz
+```
+
+**Performance**: Validates 50 batches in ~2 seconds on Apple Silicon (MPS).
+
+See [VALIDATION_OPTIMIZATIONS.md](VALIDATION_OPTIMIZATIONS.md) for optimization details.
+
+### 4. Memory Query
 
 Search your memories for similar content:
 
@@ -134,6 +171,7 @@ reports/                  # Training reports
 - Architecture: Vision Transformer with 6 layers, 4 heads
 - Embedding dimension: 256
 - Masking ratio: 60% for self-supervised learning
+- **Optimized for MPS**: Memory-mapped data loading, float32 enforcement, efficient device transfers
 
 ### Audio Processing
 - Input: 16kHz mono audio
@@ -142,11 +180,18 @@ reports/                  # Training reports
 - Hidden dimension: 256
 
 ### Training Schedule
-- Vision: 5,000 steps
+- Vision: 5,000 steps (baseline config: stable training with outlier detection)
 - Audio: 4,000 steps  
 - Alignment: 2,000 steps
 - Batch size: 16 (with micro-batching)
-- Learning rate: 1e-4
+- Learning rate: 1e-4 (with warmup and LR scheduling)
+
+### Performance Optimizations
+- **Validation**: ~0.035s per batch on MPS
+- **Data Loading**: Memory-mapped numpy arrays for efficient I/O
+- **Device Management**: Automatic MPS/CUDA detection with fallbacks
+- **Multiprocessing**: Optimized for macOS with spawn method
+- See [VALIDATION_OPTIMIZATIONS.md](VALIDATION_OPTIMIZATIONS.md) for details
 
 ## Memory Operations
 
@@ -167,10 +212,29 @@ The episodic memory system provides:
 ## Requirements
 
 - Python 3.8+
-- PyTorch 2.2+
+- PyTorch 2.2+ (with MPS support for Apple Silicon)
 - FFmpeg for video processing
 - 8GB+ RAM recommended
 - GPU support (MPS/CUDA) for faster training
+
+### Platform-Specific Notes
+
+**macOS (Apple Silicon)**:
+- Defaults to `num_workers=0` for DataLoader stability
+- Uses MPS backend automatically
+- File descriptor limit: `ulimit -n 4096` recommended
+
+**Linux/CUDA**:
+- Supports multiprocessing workers
+- CUDA pin_memory enabled automatically
+
+## Documentation
+
+- **[BASELINE_README.md](BASELINE_README.md)**: Stable baseline configuration and training results
+- **[CLEVRER_INTEGRATION.md](CLEVRER_INTEGRATION.md)**: CLEVRER dataset integration guide
+- **[VALIDATION_OPTIMIZATIONS.md](VALIDATION_OPTIMIZATIONS.md)**: Validation performance optimizations
+- **[TRAINING_FINAL_SUMMARY.md](TRAINING_FINAL_SUMMARY.md)**: Complete training analysis and results
+- **[FIXES_APPLIED.md](FIXES_APPLIED.md)**: Training stability fixes and improvements
 
 ## Research Background
 
@@ -180,6 +244,12 @@ This implementation combines several cutting-edge self-supervised learning techn
 - **CPC**: Contrastive Predictive Coding for audio representation learning  
 - **CLIP**: Contrastive Language-Image Pre-training for multimodal alignment
 - **Episodic Memory**: Inspired by cognitive science research on human memory
+
+### Key Improvements
+
+- **Stable Training**: Outlier detection, gradient clipping, and numerical stability fixes
+- **Fast Validation**: Optimized data loading and device management for sub-second batch processing
+- **Production Ready**: Comprehensive error handling, logging, and checkpoint management
 
 ## License
 
