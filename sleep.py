@@ -34,7 +34,8 @@ def main() -> None:
     cfg = load_config(cfg_path)
 
     run_date = args.date or cfg.get("data", {}).get("today_date") or dt.date.today().isoformat()
-    device = resolve_device(cfg.get("device", "auto"))
+    device_str = cfg.get("device", "auto")
+    device = resolve_device(device_str)
 
     ckpt_dir = Path(cfg["outputs"]["ckpt_dir"])
     ckpt_dir.mkdir(parents=True, exist_ok=True)

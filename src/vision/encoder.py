@@ -58,8 +58,45 @@ class Predictor(nn.Module):
     def forward(self, x): return self.net(x)
 
 def jepa_loss(context_tokens, target_tokens, mask_indices):
-    ctx = context_tokens[mask_indices]          # [M,D]
-    tgt = target_tokens[mask_indices].detach()
-    ctx = F.normalize(ctx, dim=-1)
-    tgt = F.normalize(tgt, dim=-1)
-    return (1.0 - (ctx * tgt).sum(dim=-1)).mean()
+    """
+    Hardened cosine loss with eps and safe token filtering.
+    Prevents numerical instability from zero/near-zero vectors in bf16.
+    """
+    eps = 1e-6
+    ctx_raw = context_tokens
+    tgt_raw = target_tokens.detach()
+    
+    # Compute norms and identify safe (non-degenerate) tokens
+    ctx_norm = ctx_raw.norm(dim=-1, keepdim=True)  # [B, N, 1]
+    tgt_norm = tgt_raw.norm(dim=-1, keepdim=True)  # [B, N, 1]
+    
+    safe_ctx = ctx_norm.squeeze(-1) > eps  # [B, N]
+    safe_tgt = tgt_norm.squeeze(-1) > eps  # [B, N]
+    safe = safe_ctx & safe_tgt & mask_indices  # [B, N] - keep only valid, non-degenerate tokens
+    
+    # Normalize with eps for numerical stability
+    ctx = F.normalize(ctx_raw, dim=-1, eps=eps)  # [B, N, D]
+    tgt = F.normalize(tgt_raw, dim=-1, eps=eps)  # [B, N, D]
+    
+    # Compute similarity only for safe tokens
+    sim = 1.0 - (ctx * tgt).sum(-1)  # [B, N]
+    
+    # Mask and normalize per sample
+    mask_f = safe.float()  # [B, N]
+    num_per_sample = mask_f.sum(dim=1).clamp_min(1.0)  # [B] - number of valid tokens per sample
+    
+    # Average per sample, then mean over batch
+    loss_per_sample = (sim * mask_f).sum(dim=1) / num_per_sample  # [B]
+    loss = loss_per_sample.mean()
+    
+    # Return loss and stats for telemetry
+    num_valid = safe.sum().item()
+    num_total = mask_indices.sum().item()
+    pct_filtered = (1.0 - num_valid / max(num_total, 1)) * 100.0
+    
+    return loss, {
+        "num_valid_tokens": num_valid,
+        "num_total_tokens": num_total,
+        "pct_filtered": pct_filtered,
+        "loss_per_sample": loss_per_sample.detach(),
+    }

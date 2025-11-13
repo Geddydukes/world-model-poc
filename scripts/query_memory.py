@@ -1,11 +1,11 @@
-"""Query the episodic memory for nearest vision embeddings."""
-
 from __future__ import annotations
+"""Query the episodic memory for nearest vision embeddings."""
 
 import argparse
 from pathlib import Path
 from typing import Any, Dict
 
+import numpy as np
 import torch
 import torchvision.transforms as T
 import yaml

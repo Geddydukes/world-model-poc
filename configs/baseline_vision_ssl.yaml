@@ -1,0 +1,56 @@
+# Baseline: Stable Vision SSL on CLEVRER
+# Locked configuration after resolving training stability issues.
+
+version: 1.0.0
+run_name: vision_ssl_clevrer_baseline
+
+seed: 1337
+device: mps
+precision: bf16
+
+batch:
+  micro: 2
+  grad_accum: 8     # effective batch size = 16
+
+data:
+  drop_last: true
+  log_manifest: true
+  seed: 1337        # ensures reproducible shuffling
+
+optim:
+  lr: 1.0e-4
+  weight_decay: 0.05
+  weight_decay_norm_bias: 0.0   # LayerNorm & bias excluded from WD
+  clip_norm: 1.0
+
+schedule:
+  lr_cut_step: 2501
+  lr_after_cut: 5.0e-5
+  cosine_to_zero: false
+  warmup_steps: 0
+
+loss:
+  type: cosine
+  eps: 1.0e-6
+  per_sample_mean: true
+  safe_token_filter: true
+
+outliers:
+  enable_tripwire: true
+  sigma: 3.0
+  skip_on_trigger: true
+
+logging:
+  log_every: 500
+  grad_every: 100
+  fields: [loss, grad_norm, lr, valid_tokens, inputs_std]
+
+eval:
+  interval_steps: 500
+  rollout_steps: 20
+  seed: 1337
+  save_best_by: val_rollout_mse
+  ema_tiebreak_window: 200
+
+checkpoints:
+  final_path: checkpoints/daily/clevrer_train_vision_ssl.pt

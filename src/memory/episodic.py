@@ -1,6 +1,5 @@
-"""Disk-backed episodic memory with temporal metadata."""
-
 from __future__ import annotations
+"""Disk-backed episodic memory with temporal metadata (normalized schema)."""
 
 import sqlite3
 from contextlib import contextmanager
@@ -26,8 +25,6 @@ class ClipRecord:
 
 
 class EpisodicMemory:
-    """File-backed episodic memory built on SQLite + numpy arrays."""
-
     def __init__(
         self,
         sqlite_path: str | Path = "memory/episodic.sqlite",
@@ -179,10 +176,7 @@ class EpisodicMemory:
     ) -> List[Tuple[str, float]]:
         with self._cursor() as cur:
             if modality:
-                cur.execute(
-                    "SELECT vec_path, clip_id FROM embeddings WHERE modality=?",
-                    (modality.lower(),),
-                )
+                cur.execute("SELECT vec_path, clip_id FROM embeddings WHERE modality=?", (modality.lower(),))
             else:
                 cur.execute("SELECT vec_path, clip_id FROM embeddings")
             rows = cur.fetchall()

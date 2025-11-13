@@ -21,12 +21,7 @@ from src.ingest.decode import (
     extract_audio_wav,
     save_audio_features,
 )
-from src.ingest.ffmpeg_utils import (
-    compute_clip_id,
-    ensure_dir,
-    ffmpeg_segment_command,
-    run_ffmpeg,
-)
+from src.ingest.ffmpeg_utils import compute_clip_id, ensure_dir, ffmpeg_segment_command, run_ffmpeg
 from src.ingest.flow import compute_dense_flow, save_flow
 from src.memory.episodic import ClipRecord, EpisodicMemory
 
@@ -135,7 +130,7 @@ def main() -> None:
     audio_defaults = cfg.get("audio", {})
     memory_cfg = cfg.get("memory", {})
 
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description="Ingest a day's raw videos into clips/frames/audio")
     ap.add_argument("--date", required=True, help="YYYY-MM-DD date string")
     ap.add_argument("--clip-seconds", type=int, default=3)
     ap.add_argument("--target-fps", type=float, default=None)

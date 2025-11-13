@@ -3,14 +3,24 @@ device: auto
 precision: bf16
 
 data:
-  today_date: "2025-09-09"
+  today_date: "clevrer_train"
   image_size: 224
-  frame_glob_today: "data/frames/{date}/**/*.jpg"
+  frame_glob_today: "data/sequences/clevrer_train/*/frames.npy"
   frame_glob_replay: ""
-  audio_glob_today: "data/audio/{date}/segments/*.wav"
+  audio_glob_today: "data/audio/clevrer_train/segments/*.wav"
   audio_glob_replay: ""
   mix_ratio_today: 0.6
   num_workers: 2
+  # CLEVRER dataset paths
+  clevrer:
+    video_dir: "data/clevrer/videos"
+    annotation_dir: "data/clevrer/annotations"
+    train_dir: "data/clevrer/train"
+    val_dir: "data/clevrer/val"
+    test_dir: "data/clevrer/test"
+    use_clevrer: true
+    clevrer_frame_glob: "data/sequences/clevrer_train/*/frames.npy"
+    clevrer_audio_glob: "data/audio/clevrer_train/segments/*.wav"
 
 ingest:
   target_fps: 8.0
@@ -50,7 +60,7 @@ train:
   lr: 1.0e-4
   weight_decay: 0.05
   ema_momentum: 0.999
-  log_every: 1000
+  log_every: 500
 
 memory:
   sqlite_path: "memory/episodic.sqlite"
