@@ -2,9 +2,6 @@
 
 A multimodal AI system that learns to understand and remember daily experiences by processing visual and audio data. This system builds episodic memories from your daily life through self-supervised learning, enabling semantic search across your personal experiences.
 
-## Overview
-
-This project implements a personal AI assistant that continuously learns from your daily activities by watching and listening to your environment. It uses state-of-the-art self-supervised learning techniques to build a searchable memory system without requiring any manual labeling.
 
 ## Key Features
 
